@@ -138,6 +138,9 @@ class DistServer(object):
     r""" Fetch a sampled message from the buffer of a specific sampling
     producer with its producer id.
     """
+    producer = self._producer_pool.get(producer_id, None)
+    if producer is not None and producer.is_all_sampling_completed():
+      return None
     buffer = self._msg_buffer_pool.get(producer_id, None)
     if buffer is None:
       return None

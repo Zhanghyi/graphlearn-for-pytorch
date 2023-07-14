@@ -28,17 +28,14 @@ class RemoteReceivingChannel(ChannelBase):
     server_rank (int): The rank of target server to fetch sampled messages.
     producer_id (int): The sequence id of created sampling producer on the
       target server.
-    num_expected (int): The number of expected sampled messages at one epoch.
     prefetch_size (int): The number of messages to prefetch. (Default ``4``).
   """
   def __init__(self,
                server_rank: int,
                producer_id: int,
-               num_expected: int,
                prefetch_size: int = 4):
     self.server_rank = server_rank
     self.producer_id = producer_id
-    self.num_expected = num_expected
     self.prefetch_size = prefetch_size
     self.num_request = 0
     self.num_received = 0

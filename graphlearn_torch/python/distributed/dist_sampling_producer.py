@@ -57,6 +57,7 @@ def _sampling_worker_loop(rank,
                           worker_options: _BasicDistSamplingWorkerOptions,
                           channel: ChannelBase,
                           task_queue: mp.Queue,
+                          sampling_completed_worker_count: mp.Value,
                           mp_barrier):
   r""" Subprocess work loop for sampling worker.
   """
@@ -132,6 +133,10 @@ def _sampling_worker_loop(rank,
             dist_sampler.subgraph(sampler_input[index])
 
         dist_sampler.wait_all()
+
+        with sampling_completed_worker_count.get_lock():
+          sampling_completed_worker_count += 1 # non-atomic, lock is necessary
+
       elif command == MpCommand.STOP:
         keep_running = False
       else:
@@ -165,6 +170,7 @@ class DistMpSamplingProducer(object):
     self.worker_options._assign_worker_devices()
     self.num_workers = self.worker_options.num_workers
     self.output_channel = output_channel
+    self.sampling_completed_worker_count = mp.Value('I', self.num_workers, lock=True)
 
     self._task_queues = []
     self._workers = []
@@ -223,9 +229,13 @@ class DistMpSamplingProducer(object):
     else:
       seeds_indexes = [None] * self.num_workers
 
+    self.sampling_completed_worker_count = 0
     for rank in range(self.num_workers):
       self._task_queues[rank].put((MpCommand.SAMPLE_ALL, seeds_indexes[rank]))
     time.sleep(0.1)
+  
+  def is_all_sampling_completed(self):
+    return self.sampling_completed_worker_count == self.num_workers
 
   def _get_worker_seeds_ranges(self):
     num_worker_batches = [0] * self.num_workers

@@ -15,9 +15,8 @@
 
 from abc import ABC, abstractmethod
 from typing import Dict
-from .. import py_graphlearn_torch as pywrap
-
 import torch
+from .. import py_graphlearn_torch as pywrap
 
 QueueTimeoutError =  pywrap.QueueTimeoutError
 

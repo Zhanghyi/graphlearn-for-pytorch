@@ -205,7 +205,7 @@ public:
 
   /// Dequeue a message on child process.
   /// \return `ShmData`
-  ShmData Dequeue();
+  ShmData Dequeue(unsigned int timeout_ms);
 
   bool Empty();
 
@@ -235,6 +235,11 @@ private:
     void operator()(ShmQueueMeta* meta_ptr);
   };
   std::shared_ptr<ShmQueueMeta> meta_;
+};
+
+class QueueTimeoutError : public std::runtime_error {
+public:
+    QueueTimeoutError() : std::runtime_error("Timeout: Queue is empty.") {}
 };
 
 }  // namespace graphlearn_torch

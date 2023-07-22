@@ -100,7 +100,7 @@ TEST_F(ShmQueueTest, Functionality) {
       // Receiver
       for (int r = 0; r < 10; r++) {
         // receive test msg
-        auto shm_data = shq_->Dequeue();
+        auto shm_data = shq_->Dequeue(100);
         auto test_msg = TestMsg::Load(shm_data);
         // send verify msg
         VerifyMsg verify_msg{test_msg.id, VerifyMsg::BehvType::Receive};
@@ -121,7 +121,7 @@ TEST_F(ShmQueueTest, Functionality) {
     std::unordered_set<int> sent_msgs, received_msgs;
     for (int i = 0; i < 40; i++) {
       EXPECT_FALSE(res_shq_->Empty());
-      auto shm_data = res_shq_->Dequeue();
+      auto shm_data = res_shq_->Dequeue(100);
       auto* verify_msg = static_cast<const VerifyMsg*>(shm_data.Data());
       if (verify_msg->type == VerifyMsg::BehvType::Send) {
         EXPECT_EQ(sent_msgs.count(verify_msg->id), 0);
@@ -131,6 +131,12 @@ TEST_F(ShmQueueTest, Functionality) {
         EXPECT_EQ(received_msgs.count(verify_msg->id), 0);
         received_msgs.insert(verify_msg->id);
       }
+    }
+    try {
+      auto shm_data = res_shq_->Dequeue(100);
+    }
+    catch (const QueueTimeoutError& e) {
+      std::cout << "Expected QueueTimeoutError: " << e.what() << std::endl;
     }
     EXPECT_TRUE(res_shq_->Empty());
     EXPECT_EQ(sent_msgs.size(), 20);

@@ -69,7 +69,7 @@ def run_client_proc(
     master_addr=master_addr,
     master_port=server_client_port,
     num_rpc_threads=4,
-    client_group_name='dist-train-supervised-sage-client'
+    client_group_name='dist_train_supervised_sage_client'
   )
 
   # Initialize training process group of PyTorch.

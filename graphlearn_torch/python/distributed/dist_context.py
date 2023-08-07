@@ -101,7 +101,7 @@ class DistContext(object):
   def worker_name(self) -> str:
     r""" Get worker name of the current process of this context.
     """
-    return f"{self.group_name}-{self.rank}"
+    return f"{self.group_name}_{self.rank}"
 
 
 _dist_context: DistContext = None

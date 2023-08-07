@@ -16,6 +16,7 @@ def worker(rank):
     )
 
     rpc.init_rpc(
+        # name=f'worker-{rank}',
         name=f'worker_{rank}',
         rank=rank,
         # world_size=None,

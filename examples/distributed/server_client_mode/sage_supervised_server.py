@@ -35,7 +35,7 @@ def run_server_proc(
     master_addr=master_addr,
     master_port=server_client_port,
     num_rpc_threads=16,
-    server_group_name='dist-train-supervised-sage-server'
+    server_group_name='dist_train_supervised_sage_server'
   )
 
   print(f'-- [Server {server_rank}] Waiting for exit ...')

@@ -267,17 +267,23 @@ def init_rpc(master_addr: str,
     )
 
     if dynamically:
-      print(f'{ctx.rank} dynamically init rpc')
-      time.sleep(20)
+      print(f'{ctx.global_rank} dynamically init rpc')
+      time.sleep(10)
 
     global _rpc_inited
     _rpc_inited = True
 
     global _rpc_worker_names
     _rpc_worker_names = {}
-    gathered_results = global_all_gather(
-      obj=(ctx.role, ctx.world_size, ctx.rank), timeout=rpc_timeout
-    )
+    # gathered_results = global_all_gather(
+    #   obj=(ctx.role, ctx.world_size, ctx.rank), timeout=rpc_timeout
+    # )
+    if dynamically:
+      gathered_results = {'dist_train_supervised_sage_server_0': (DistRole.SERVER, 2, 0), 'dist_train_supervised_sage_server_1': (DistRole.SERVER, 2, 1), 'dist_train_supervised_sage_client_0': (DistRole.CLIENT, 4, 0), 'dist_train_supervised_sage_client_1': (DistRole.CLIENT, 4, 1), 'dist_train_supervised_sage_client_2': (DistRole.CLIENT, 4, 2), 'dist_train_supervised_sage_client_3': (DistRole.CLIENT, 4, 3)}
+    else:
+      gathered_results = global_all_gather(
+        obj=(ctx.role, ctx.world_size, ctx.rank), timeout=rpc_timeout
+      )
     for worker_name, (role, role_size, role_rank) in gathered_results.items():
       worker_list = _rpc_worker_names.get(role, None)
       if worker_list is None:
@@ -295,7 +301,9 @@ def init_rpc(master_addr: str,
     global _rpc_current_group_worker_names
     _rpc_current_group_worker_names = set(_rpc_worker_names[ctx.role])
 
-    global_barrier(timeout=rpc_timeout) 
+    if not dynamically:
+      global_barrier(timeout=rpc_timeout) 
+  
     # TODO(hongyi): in server-client mode, if "torch.distributed.init_process_group" follows "global_barrier", 
     # some participants may randomly hang
     time.sleep(1) 

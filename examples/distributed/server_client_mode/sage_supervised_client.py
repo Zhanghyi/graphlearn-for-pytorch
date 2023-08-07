@@ -144,7 +144,7 @@ def run_client_proc(
   print(f'-- [Client {client_rank}] Initializing model and optimizer ...')
   torch.cuda.set_device(current_device)
   model = GraphSAGE(
-    in_channels=100,
+    in_channels=128,
     hidden_channels=256,
     num_layers=3,
     out_channels=47,

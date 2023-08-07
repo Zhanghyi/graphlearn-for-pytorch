@@ -48,7 +48,7 @@ def init_client(num_servers: int, num_clients: int, client_rank: int,
   _set_client_context(num_servers, num_clients, client_rank, client_group_name)
   # Note that a client RPC agent will never remote requests, thus set the
   # number of rpc threads to ``1`` is enough.
-  init_rpc(master_addr, master_port, num_rpc_threads=num_rpc_threads)
+  init_rpc(master_addr, master_port, num_rpc_threads=num_rpc_threads, dynamically=True)
 
 
 def shutdown_client():

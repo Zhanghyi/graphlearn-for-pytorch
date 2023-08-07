@@ -209,7 +209,7 @@ def init_server(num_servers: int, num_clients: int, server_rank: int,
   _set_server_context(num_servers, num_clients, server_rank, server_group_name)
   global _dist_server
   _dist_server = DistServer(dataset=dataset)
-  init_rpc(master_addr, master_port, num_rpc_threads, request_timeout)
+  init_rpc(master_addr, master_port, num_rpc_threads, request_timeout, dynamically=True)
 
 
 def wait_and_shutdown_server():

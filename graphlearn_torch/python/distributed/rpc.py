@@ -237,7 +237,8 @@ def global_barrier(timeout=None):
 def init_rpc(master_addr: str,
              master_port: int,
              num_rpc_threads: int = 16,
-             rpc_timeout: float = 180):
+             rpc_timeout: float = 180,
+             dynamically: bool=False):
   r""" Initialize rpc on the current process.
   """
   with _rpc_init_lock:
@@ -257,13 +258,17 @@ def init_rpc(master_addr: str,
       rpc_timeout=rpc_timeout,
       init_method=f'tcp://{master_addr}:{master_port}'
     )
-
+      
     rpc.init_rpc(
       name=ctx.worker_name,
       rank=ctx.global_rank,
-      world_size=ctx.global_world_size,
+      world_size= None if dynamically else ctx.global_world_size,
       rpc_backend_options=options
     )
+
+    if dynamically:
+      print(f'{ctx.rank} dynamically init rpc')
+      time.sleep(20)
 
     global _rpc_inited
     _rpc_inited = True

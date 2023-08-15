@@ -42,8 +42,6 @@ def test(model, test_loader, dataset_name):
 def run_client_proc(
     num_servers: int,
     num_clients: int,
-    client_rank: int,
-    server_rank_list: List[int],
     dataset_name: str,
     train_path_list: List[str],
     test_path_list: List[str],
@@ -51,15 +49,14 @@ def run_client_proc(
     batch_size: int,
     master_addr: str,
     server_client_port: int,
-    training_pg_master_port: int,
     train_loader_master_port: int,
     test_loader_master_port: int,
 ):
-    print(f"-- [Client {client_rank}] Initializing client ...")
+    print(f"-- Initializing client ...")
     glt.distributed.init_client(
         num_servers=num_servers,
         num_clients=num_clients,
-        client_rank=client_rank,
+        client_rank=0,
         master_addr=master_addr,
         master_port=server_client_port,
         num_rpc_threads=4,
@@ -71,7 +68,7 @@ def run_client_proc(
     current_device = torch.device(current_ctx.rank % torch.cuda.device_count())
 
     print(
-        f"-- [Client {client_rank}] Initializing training process group of PyTorch ..."
+        f"--  Initializing training process group of PyTorch ..."
     )
 
     # Create distributed neighbor loader on remote server for training.
@@ -98,7 +95,7 @@ def run_client_proc(
     )
 
     # Create distributed neighbor loader on remote server for testing.
-    print(f"-- [Client {client_rank}] Creating testing dataloader ...")
+    print(f"--  Creating testing dataloader ...")
     test_loader = glt.distributed.DistNeighborLoader(
         data=None,
         num_neighbors=[15, 10, 5],
@@ -132,7 +129,7 @@ def run_client_proc(
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 
     # Train and test.
-    print(f"-- [Client {client_rank}] Start training and testing ...")
+    print(f"--  Start training and testing ...")
     for epoch in range(0, epochs):
         model.train()
         start = time.time()
@@ -147,17 +144,17 @@ def run_client_proc(
 
         end = time.time()
         print(
-            f"-- [Client {client_rank}] Epoch: {epoch:03d}, Loss: {loss:.4f}, Epoch Time: {end - start}"
+            f"--  Epoch: {epoch:03d}, Loss: {loss:.4f}, Epoch Time: {end - start}"
         )
         # Test accuracy.
         if epoch == 0 or epoch > (epochs // 2):
             test_acc = test(model, test_loader, dataset_name)
-            print(f"-- [Client {client_rank}] Test Accuracy: {test_acc:.4f}")
+            print(f"--  Test Accuracy: {test_acc:.4f}")
 
-    print(f"-- [Client {client_rank}] Shutdowning ...")
+    print(f"--  Shutdowning ...")
     glt.distributed.shutdown_client()
 
-    print(f"-- [Client {client_rank}] Exited ...")
+    print(f"--  Exited ...")
 
 
 if __name__ == "__main__":
@@ -305,14 +302,11 @@ if __name__ == "__main__":
     mp_context = torch.multiprocessing.get_context("spawn")
     client_procs = []
     for local_proc_rank in range(args.num_client_procs_per_node):
-        client_rank = args.node_rank * args.num_client_procs_per_node + local_proc_rank
         cproc = mp_context.Process(
             target=run_client_proc,
             args=(
                 num_servers,
                 num_clients,
-                client_rank,
-                [server_rank for server_rank in range(num_servers)],
                 args.dataset,
                 train_path_list,
                 test_path_list,
@@ -320,7 +314,6 @@ if __name__ == "__main__":
                 args.batch_size,
                 args.master_addr,
                 args.server_client_master_port,
-                args.training_pg_master_port,
                 args.train_loader_master_port,
                 args.test_loader_master_port,
             ),

@@ -47,6 +47,7 @@ def launch_graphlearn_torch_server(handle, config, server_index):
         fn=run_server_proc, args=(handle, server_rank, dataset), nprocs=1
     )
 
+
 if __name__ == "__main__":
     handle = {
         "master_addr": "localhost",

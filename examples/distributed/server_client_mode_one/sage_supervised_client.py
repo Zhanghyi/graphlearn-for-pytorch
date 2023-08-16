@@ -40,7 +40,7 @@ def test(model, test_loader, dataset_name):
 
 
 def run_client_proc(
-        rank: int, 
+    rank: int,
     dataset_name: str,
     train_path_list: List[str],
     test_path_list: List[str],
@@ -219,26 +219,26 @@ if __name__ == "__main__":
     print(f"* testing loader master port: {args.test_loader_master_port}")
 
     print("-- Loading training and testing seeds ...")
-    train_path_list = [            osp.join(
-                root_dir, f"{args.dataset}-train-partitions", f"partition1.pt"
-            )]
+    train_path_list = [
+        osp.join(root_dir, f"{args.dataset}-train-partitions", f"partition1.pt")
+    ]
 
-    test_path_list = [            osp.join(
-                root_dir, f"{args.dataset}-test-partitions", f"partition1.pt"
-            )]
+    test_path_list = [
+        osp.join(root_dir, f"{args.dataset}-test-partitions", f"partition1.pt")
+    ]
 
     print("-- Launching client process ...")
     torch.multiprocessing.spawn(
-            fn=run_client_proc,
-            args=(
-                args.dataset,
-                train_path_list,
-                test_path_list,
-                args.epochs,
-                args.batch_size,
-                args.master_addr,
-                args.server_client_master_port,
-                args.train_loader_master_port,
-                args.test_loader_master_port,
-            ),
-        )
+        fn=run_client_proc,
+        args=(
+            args.dataset,
+            train_path_list,
+            test_path_list,
+            args.epochs,
+            args.batch_size,
+            args.master_addr,
+            args.server_client_master_port,
+            args.train_loader_master_port,
+            args.test_loader_master_port,
+        ),
+    )

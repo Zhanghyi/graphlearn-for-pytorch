@@ -8,7 +8,7 @@ import torch.distributed
 
 
 # CUDA_VISIBLE_DEVICES=3 python examples/distributed/server_client_mode_one/sage_supervised_server.py
-def run_server_proc(handle, server_rank, dataset):
+def run_server_proc(proc_rank, handle, server_rank, dataset):
     glt.distributed.init_server(
         num_servers=handle["num_servers"],
         num_clients=handle["num_clients"],
@@ -17,7 +17,7 @@ def run_server_proc(handle, server_rank, dataset):
         master_addr=handle["master_addr"],
         master_port=handle["server_client_master_port"],
         num_rpc_threads=16,
-        server_group_name="dist_train_supervised_sage_server",
+        # server_group_name="dist_train_supervised_sage_server",
     )
 
     print(f"-- [Server {server_rank}] Waiting for exit ...")
@@ -26,6 +26,8 @@ def run_server_proc(handle, server_rank, dataset):
 
 
 def launch_graphlearn_torch_server(handle, config, server_index):
+
+
     # TODO(hongyi): hard code arxiv for test now
     dataset_name = "ogbn-arxiv"
     dataset_root_dir = "/home/hongyizhang/arxiv"
@@ -41,14 +43,11 @@ def launch_graphlearn_torch_server(handle, config, server_index):
 
     import torch
 
-    mp_context = torch.multiprocessing.get_context("spawn")
     print(f"-- [Server {server_rank}] Initializing server ...")
 
-    proc = mp_context.Process(
-        target=run_server_proc, args=(handle, server_rank, dataset)
+    torch.multiprocessing.spawn(
+        fn=run_server_proc, args=(handle, server_rank, dataset), nprocs=1
     )
-    proc.start()
-    proc.join()
 
 
 if __name__ == "__main__":

@@ -67,12 +67,10 @@ def run_client_proc(
     current_ctx = glt.distributed.get_context()
     current_device = torch.device(current_ctx.rank % torch.cuda.device_count())
 
-    print(
-        f"--  Initializing training process group of PyTorch ..."
-    )
+    print(f"-- Initializing training process group of PyTorch ...")
 
     # Create distributed neighbor loader on remote server for training.
-    print(f"Creating training dataloader ...")
+    print(f"-- Creating training dataloader ...")
     train_loader = glt.distributed.DistNeighborLoader(
         data=None,
         num_neighbors=[15, 10, 5],
@@ -84,18 +82,18 @@ def run_client_proc(
         worker_options=glt.distributed.RemoteDistSamplingWorkerOptions(
             server_rank=[0],
             num_workers=1,
-            worker_devices=["cpu"],
+            worker_devices=[torch.device("cpu")],
             worker_concurrency=1,
             master_addr=master_addr,
             master_port=train_loader_master_port,
             buffer_size="1GB",
-            prefetch_size=2,
+            prefetch_size=1,
             worker_key="train",
         ),
     )
 
     # Create distributed neighbor loader on remote server for testing.
-    print(f"--  Creating testing dataloader ...")
+    print(f"-- Creating testing dataloader ...")
     test_loader = glt.distributed.DistNeighborLoader(
         data=None,
         num_neighbors=[15, 10, 5],
@@ -107,12 +105,12 @@ def run_client_proc(
         worker_options=glt.distributed.RemoteDistSamplingWorkerOptions(
             server_rank=[0],
             num_workers=1,
-            worker_devices=["cpu"],
+            worker_devices=[torch.device("cpu")],
             worker_concurrency=1,
             master_addr=master_addr,
             master_port=test_loader_master_port,
             buffer_size="1GB",
-            prefetch_size=2,
+            prefetch_size=1,
             worker_key="test",
         ),
     )
@@ -129,7 +127,7 @@ def run_client_proc(
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 
     # Train and test.
-    print(f"--  Start training and testing ...")
+    print(f"-- Start training and testing ...")
     for epoch in range(0, epochs):
         model.train()
         start = time.time()
@@ -143,18 +141,16 @@ def run_client_proc(
             optimizer.step()
 
         end = time.time()
-        print(
-            f"--  Epoch: {epoch:03d}, Loss: {loss:.4f}, Epoch Time: {end - start}"
-        )
+        print(f"-- Epoch: {epoch:03d}, Loss: {loss:.4f}, Epoch Time: {end - start}")
         # Test accuracy.
         if epoch == 0 or epoch > (epochs // 2):
             test_acc = test(model, test_loader, dataset_name)
-            print(f"--  Test Accuracy: {test_acc:.4f}")
+            print(f"-- Test Accuracy: {test_acc:.4f}")
 
-    print(f"--  Shutdowning ...")
+    print(f"-- Shutdowning ...")
     glt.distributed.shutdown_client()
 
-    print(f"--  Exited ...")
+    print(f"-- Exited ...")
 
 
 if __name__ == "__main__":

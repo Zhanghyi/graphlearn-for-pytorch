@@ -40,8 +40,7 @@ def test(model, test_loader, dataset_name):
 
 
 def run_client_proc(
-    num_servers: int,
-    num_clients: int,
+        rank: int, 
     dataset_name: str,
     train_path_list: List[str],
     test_path_list: List[str],
@@ -54,8 +53,8 @@ def run_client_proc(
 ):
     print(f"-- Initializing client ...")
     glt.distributed.init_client(
-        num_servers=num_servers,
-        num_clients=num_clients,
+        num_servers=1,
+        num_clients=1,
         client_rank=0,
         master_addr=master_addr,
         master_port=server_client_port,
@@ -170,42 +169,6 @@ if __name__ == "__main__":
         help="The root directory (relative path) of partitioned ogbn dataset.",
     )
     parser.add_argument(
-        "--num_dataset_partitions",
-        type=int,
-        default=2,
-        help="The number of partitions of the dataset.",
-    )
-    parser.add_argument(
-        "--num_server_nodes",
-        type=int,
-        default=2,
-        help="Number of server nodes for remote sampling.",
-    )
-    parser.add_argument(
-        "--num_client_nodes",
-        type=int,
-        default=2,
-        help="Number of client nodes for training.",
-    )
-    parser.add_argument(
-        "--node_rank",
-        type=int,
-        default=0,
-        help="The node rank of the current role.",
-    )
-    parser.add_argument(
-        "--num_server_procs_per_node",
-        type=int,
-        default=1,
-        help="The number of server processes for remote sampling per server node.",
-    )
-    parser.add_argument(
-        "--num_client_procs_per_node",
-        type=int,
-        default=2,
-        help="The number of client processes for training per client node.",
-    )
-    parser.add_argument(
         "--epochs",
         type=int,
         default=10,
@@ -230,12 +193,6 @@ if __name__ == "__main__":
         help="The port used for RPC initialization across all servers and clients.",
     )
     parser.add_argument(
-        "--training_pg_master_port",
-        type=int,
-        default=11111,
-        help="The port used for PyTorch's process group initialization across all training processes.",
-    )
-    parser.add_argument(
         "--train_loader_master_port",
         type=int,
         default=11112,
@@ -249,60 +206,31 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    print(
-        f"--- Distributed training example of supervised SAGE with server-client mode. Client {args.node_rank} ---"
-    )
     print(f"* dataset: {args.dataset}")
     print(f"* dataset root dir: {args.dataset_root_dir}")
-    print(f"* total server nodes: {args.num_server_nodes}")
-    print(f"* total client nodes: {args.num_client_nodes}")
-    print(f"* node rank: {args.node_rank}")
-    print(
-        f"* number of server processes per server node: {args.num_server_procs_per_node}"
-    )
-    print(
-        f"* number of client processes per client node: {args.num_client_procs_per_node}"
-    )
     print(f"* master addr: {args.master_addr}")
     print(f"* server-client master port: {args.server_client_master_port}")
-    print(f"* number of dataset partitions: {args.num_dataset_partitions}")
 
-    num_servers = args.num_server_nodes * args.num_server_procs_per_node
-    num_clients = args.num_client_nodes * args.num_client_procs_per_node
     root_dir = osp.join(osp.dirname(osp.realpath(__file__)), args.dataset_root_dir)
 
     print(f"* epochs: {args.epochs}")
     print(f"* batch size: {args.batch_size}")
-    print(f"* training process group master port: {args.training_pg_master_port}")
     print(f"* training loader master port: {args.train_loader_master_port}")
     print(f"* testing loader master port: {args.test_loader_master_port}")
 
-    print("--- Loading training and testing seeds ...")
-    train_path_list = []
-    for data_pidx in range(args.num_dataset_partitions):
-        train_path_list.append(
-            osp.join(
-                root_dir, f"{args.dataset}-train-partitions", f"partition{data_pidx}.pt"
-            )
-        )
+    print("-- Loading training and testing seeds ...")
+    train_path_list = [            osp.join(
+                root_dir, f"{args.dataset}-train-partitions", f"partition1.pt"
+            )]
 
-    test_path_list = []
-    for data_pidx in range(args.num_dataset_partitions):
-        test_path_list.append(
-            osp.join(
-                root_dir, f"{args.dataset}-test-partitions", f"partition{data_pidx}.pt"
-            )
-        )
+    test_path_list = [            osp.join(
+                root_dir, f"{args.dataset}-test-partitions", f"partition1.pt"
+            )]
 
-    print("--- Launching client processes ...")
-    mp_context = torch.multiprocessing.get_context("spawn")
-    client_procs = []
-    for local_proc_rank in range(args.num_client_procs_per_node):
-        cproc = mp_context.Process(
-            target=run_client_proc,
+    print("-- Launching client process ...")
+    torch.multiprocessing.spawn(
+            fn=run_client_proc,
             args=(
-                num_servers,
-                num_clients,
                 args.dataset,
                 train_path_list,
                 test_path_list,
@@ -314,8 +242,3 @@ if __name__ == "__main__":
                 args.test_loader_master_port,
             ),
         )
-        client_procs.append(cproc)
-    for cproc in client_procs:
-        cproc.start()
-    for cproc in client_procs:
-        cproc.join()

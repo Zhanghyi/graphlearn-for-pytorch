@@ -26,8 +26,6 @@ def run_server_proc(proc_rank, handle, server_rank, dataset):
 
 
 def launch_graphlearn_torch_server(handle, config, server_index):
-
-
     # TODO(hongyi): hard code arxiv for test now
     dataset_name = "ogbn-arxiv"
     dataset_root_dir = "/home/hongyizhang/arxiv"
@@ -48,7 +46,6 @@ def launch_graphlearn_torch_server(handle, config, server_index):
     torch.multiprocessing.spawn(
         fn=run_server_proc, args=(handle, server_rank, dataset), nprocs=1
     )
-
 
 if __name__ == "__main__":
     handle = {

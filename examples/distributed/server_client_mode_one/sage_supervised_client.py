@@ -4,7 +4,6 @@ import time
 
 import graphlearn_torch as glt
 import torch
-import torch.distributed
 import torch.nn.functional as F
 
 from ogb.nodeproppred import Evaluator
@@ -39,8 +38,7 @@ def test(model, test_loader, dataset_name):
     return test_acc
 
 
-def run_client_proc(
-    rank: int,
+def run(
     dataset_name: str,
     train_path_list: List[str],
     test_path_list: List[str],
@@ -227,18 +225,14 @@ if __name__ == "__main__":
         osp.join(root_dir, f"{args.dataset}-test-partitions", f"partition1.pt")
     ]
 
-    print("-- Launching client process ...")
-    torch.multiprocessing.spawn(
-        fn=run_client_proc,
-        args=(
-            args.dataset,
-            train_path_list,
-            test_path_list,
-            args.epochs,
-            args.batch_size,
-            args.master_addr,
-            args.server_client_master_port,
-            args.train_loader_master_port,
-            args.test_loader_master_port,
-        ),
+    run(
+        args.dataset,
+        train_path_list,
+        test_path_list,
+        args.epochs,
+        args.batch_size,
+        args.master_addr,
+        args.server_client_master_port,
+        args.train_loader_master_port,
+        args.test_loader_master_port,
     )

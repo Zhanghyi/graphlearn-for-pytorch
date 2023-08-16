@@ -1,14 +1,22 @@
-import argparse
 import json
+import base64
 import os.path as osp
 
 import graphlearn_torch as glt
 import torch
-import torch.distributed
 
 
-# CUDA_VISIBLE_DEVICES=3 python examples/distributed/server_client_mode_one/sage_supervised_server.py
-def run_server_proc(proc_rank, handle, server_rank, dataset):
+def decode_arg(arg):
+    if isinstance(arg, dict):
+        return arg
+    return json.loads(
+        base64.b64decode(arg.encode("utf-8", errors="ignore")).decode(
+            "utf-8", errors="ignore"
+        )
+    )
+
+
+def run_server_proc(proc_rank, handle, config, server_rank, dataset):
     glt.distributed.init_server(
         num_servers=handle["num_servers"],
         num_clients=handle["num_clients"],
@@ -25,7 +33,7 @@ def run_server_proc(proc_rank, handle, server_rank, dataset):
     print(f"-- [Server {server_rank}] Exited ...")
 
 
-def launch_graphlearn_torch_server(handle, config, server_index):
+def launch_graphlearn_torch_server(handle, config, server_rank):
     # TODO(hongyi): hard code arxiv for test now
     dataset_name = "ogbn-arxiv"
     dataset_root_dir = "/home/hongyizhang/arxiv"
@@ -34,17 +42,14 @@ def launch_graphlearn_torch_server(handle, config, server_index):
     dataset.load(
         root_dir=osp.join(root_dir, f"{dataset_name}-partitions"),
         partition_idx=0,
-        graph_mode="ZERO_COPY",
+        graph_mode="CPU",
         whole_node_label_file=osp.join(root_dir, f"{dataset_name}-label", "label.pt"),
     )
-    server_rank = server_index
-
-    import torch
 
     print(f"-- [Server {server_rank}] Initializing server ...")
 
     torch.multiprocessing.spawn(
-        fn=run_server_proc, args=(handle, server_rank, dataset), nprocs=1
+        fn=run_server_proc, args=(handle, config, server_rank, dataset), nprocs=1
     )
 
 

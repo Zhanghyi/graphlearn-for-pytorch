@@ -10,7 +10,7 @@ from ogb.nodeproppred import Evaluator
 from torch_geometric.nn import GraphSAGE
 from typing import List
 
-
+# python examples/distributed/server_client_mode_one/sage_supervised_client.py --master_addr=localhost --dataset=ogbn-arxiv --dataset_root_dir=/home/hongyizhang/arxiv --epochs=2
 @torch.no_grad()
 def test(model, test_loader, dataset_name):
     evaluator = Evaluator(name=dataset_name)
@@ -57,7 +57,6 @@ def run(
         master_addr=master_addr,
         master_port=server_client_port,
         num_rpc_threads=4,
-        client_group_name="dist_train_supervised_sage_client",
     )
 
     # Initialize training process group of PyTorch.

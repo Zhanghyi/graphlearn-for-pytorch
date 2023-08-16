@@ -1,11 +1,12 @@
 import json
 import base64
+
 import os.path as osp
 
 import graphlearn_torch as glt
 import torch
 
-
+# python examples/distributed/server_client_mode_one/sage_supervised_server.py
 def decode_arg(arg):
     if isinstance(arg, dict):
         return arg
@@ -14,7 +15,6 @@ def decode_arg(arg):
             "utf-8", errors="ignore"
         )
     )
-
 
 def run_server_proc(proc_rank, handle, config, server_rank, dataset):
     glt.distributed.init_server(
